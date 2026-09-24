@@ -157,9 +157,7 @@ public final class ElGamalEngine {
         //long t7 = _context.clock().now();
         BigInteger d = aalpha.modPow(k, CryptoConstants.elgp);
         //long t8 = _context.clock().now();
-        d = d.multiply(m);
-        //long t9 = _context.clock().now();
-        d = d.mod(CryptoConstants.elgp);
+        d = d.multiply(m).mod(CryptoConstants.elgp);
         //long t10 = _context.clock().now();
 
         byte[] ybytes = y.toByteArray();
