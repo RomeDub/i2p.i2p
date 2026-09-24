@@ -143,7 +143,7 @@ public final class ElGamalEngine {
         System.arraycopy(data, 0, d2, 1+Hash.HASH_LENGTH, data.length);
         
         //long t0 = _context.clock().now();
-        BigInteger m = new NativeBigInteger(1, d2);
+        BigInteger m = new BigInteger(1, d2);
         //long t1 = _context.clock().now();
         if (m.compareTo(CryptoConstants.elgp) >= 0)
             throw new IllegalArgumentException("ARGH.  Data cannot be larger than the ElGamal prime.  FIXME");
@@ -216,56 +216,59 @@ public final class ElGamalEngine {
         BigInteger y1p = ELGPM1.subtract(a);
         // we use this buf first for Y, then for D, then for the hash
         byte[] buf = SimpleByteCache.acquire(ELG_HALF_LENGTH);
-        System.arraycopy(encrypted, 0, buf, 0, ELG_HALF_LENGTH);
-        NativeBigInteger y = new NativeBigInteger(1, buf);
-        BigInteger ya = y.modPowCT(y1p, CryptoConstants.elgp);
-        System.arraycopy(encrypted, ELG_HALF_LENGTH, buf, 0, ELG_HALF_LENGTH);
-        BigInteger d = new NativeBigInteger(1, buf);
-        BigInteger m = ya.multiply(d);
-        m = m.mod(CryptoConstants.elgp);
-        byte val[] = m.toByteArray();
-        int i;
-        for (i = 0; i < val.length; i++) {
-            if (val[i] != (byte) 0x00) break;
-        }
+        try {
+            System.arraycopy(encrypted, 0, buf, 0, ELG_HALF_LENGTH);
+            NativeBigInteger y = new NativeBigInteger(1, buf);
+            BigInteger ya = y.modPowCT(y1p, CryptoConstants.elgp);
+            System.arraycopy(encrypted, ELG_HALF_LENGTH, buf, 0, ELG_HALF_LENGTH);
+            BigInteger d = new BigInteger(1, buf);
+            BigInteger m = ya.multiply(d);
+            m = m.mod(CryptoConstants.elgp);
+            byte val[] = m.toByteArray();
+            int i;
+            for (i = 0; i < val.length; i++) {
+                if (val[i] != (byte) 0x00) break;
+            }
 
-        int payloadLen = val.length - i - 1 - Hash.HASH_LENGTH;
-        if (payloadLen < 0) {
-            if (_log.shouldLog(Log.ERROR)) 
-                _log.error("Decrypted data is too small (" + (val.length - i)+ ")");
+            int payloadLen = val.length - i - 1 - Hash.HASH_LENGTH;
+            if (payloadLen < 0) {
+                if (_log.shouldLog(Log.ERROR))
+                    _log.error("Decrypted data is too small (" + (val.length - i)+ ")");
+                return null;
+            }
+
+            //ByteArrayInputStream bais = new ByteArrayInputStream(val, i, val.length - i);
+            //byte hashData[] = new byte[Hash.HASH_LENGTH];
+            //System.arraycopy(val, i + 1, hashData, 0, Hash.HASH_LENGTH);
+            //Hash hash = new Hash(hashData);
+            //Hash hash = Hash.create(val, i + 1);
+            byte rv[] = new byte[payloadLen];
+            System.arraycopy(val, i + 1 + Hash.HASH_LENGTH, rv, 0, rv.length);
+
+            // we reuse buf here for the calculated hash
+            _context.sha().calculateHash(rv, 0, payloadLen, buf, 0);
+            boolean ok = DataHelper.eqCT(buf, 0, val, i + 1, Hash.HASH_LENGTH);
+
+            long end = _context.clock().now();
+
+            long diff = end - start;
+            if (diff > 1000) {
+                if (_log.shouldLog(Log.WARN))
+                    _log.warn("Took too long to decrypt and verify ElGamal block (" + diff + "ms)");
+            }
+
+            _context.statManager().addRateData("crypto.elGamal.decrypt", diff);
+
+            if (ok) {
+                //_log.debug("Hash matches: " + DataHelper.toString(hash.getData(), hash.getData().length));
+                return rv;
+            }
+            if (_log.shouldLog(Log.DEBUG))
+                _log.debug("Doesn't match hash data = "
+                           + Base64.encode(rv), new Exception("Doesn't match"));
             return null;
+        } finally {
+            SimpleByteCache.release(buf);
         }
-
-        //ByteArrayInputStream bais = new ByteArrayInputStream(val, i, val.length - i);
-        //byte hashData[] = new byte[Hash.HASH_LENGTH];
-        //System.arraycopy(val, i + 1, hashData, 0, Hash.HASH_LENGTH);
-        //Hash hash = new Hash(hashData);
-        //Hash hash = Hash.create(val, i + 1);
-        byte rv[] = new byte[payloadLen];
-        System.arraycopy(val, i + 1 + Hash.HASH_LENGTH, rv, 0, rv.length);
-
-        // we reuse buf here for the calculated hash
-        _context.sha().calculateHash(rv, 0, payloadLen, buf, 0);
-        boolean ok = DataHelper.eqCT(buf, 0, val, i + 1, Hash.HASH_LENGTH);
-        SimpleByteCache.release(buf);
-        
-        long end = _context.clock().now();
-
-        long diff = end - start;
-        if (diff > 1000) {
-            if (_log.shouldLog(Log.WARN))
-                _log.warn("Took too long to decrypt and verify ElGamal block (" + diff + "ms)");
-        }
-
-        _context.statManager().addRateData("crypto.elGamal.decrypt", diff);
-
-        if (ok) {
-            //_log.debug("Hash matches: " + DataHelper.toString(hash.getData(), hash.getData().length));
-            return rv;
-        }
-        if (_log.shouldLog(Log.DEBUG))
-            _log.debug("Doesn't match hash data = "
-                       + Base64.encode(rv), new Exception("Doesn't match"));
-        return null;
     }
 }

@@ -10,7 +10,7 @@ package net.i2p.crypto;
  */
 
 import java.math.BigInteger;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import net.i2p.I2PAppContext;
 import net.i2p.util.I2PThread;
@@ -40,7 +40,7 @@ final class YKGenerator {
     private final int MIN_NUM_BUILDERS;
     private final int MAX_NUM_BUILDERS;
     private final int CALC_DELAY;
-    private final LinkedBlockingQueue<BigInteger[]> _values;
+    private final ArrayBlockingQueue<BigInteger[]> _values;
     private Thread _precalcThread;
     private final I2PAppContext ctx;
     private volatile boolean _isRunning;
@@ -68,7 +68,7 @@ final class YKGenerator {
         MAX_NUM_BUILDERS = ctx.getProperty(PROP_YK_PRECALC_MAX, defaultMax);
 
         CALC_DELAY = ctx.getProperty(PROP_YK_PRECALC_DELAY, DEFAULT_YK_PRECALC_DELAY);
-        _values = new LinkedBlockingQueue<BigInteger[]>(MAX_NUM_BUILDERS);
+        _values = new ArrayBlockingQueue<BigInteger[]>(MAX_NUM_BUILDERS);
 
         //if (_log.shouldLog(Log.DEBUG))
         //    _log.debug("ElGamal YK Precalc (minimum: " + MIN_NUM_BUILDERS + " max: " + MAX_NUM_BUILDERS + ", delay: "

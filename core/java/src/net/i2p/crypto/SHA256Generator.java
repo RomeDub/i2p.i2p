@@ -68,6 +68,27 @@ public final class SHA256Generator {
         }
     }
     
+    void calculateHashChain(byte[] source, int start, int len, int iterations,
+                            byte[] out, int outOffset) {
+        if (iterations < 1)
+            throw new IllegalArgumentException("iterations must be positive");
+        if ((out == null) || (out.length - outOffset < Hash.HASH_LENGTH))
+            throw new IllegalArgumentException("output is too small");
+        MessageDigest digest = acquire();
+        try {
+            digest.update(source, start, len);
+            digest.digest(out, outOffset, Hash.HASH_LENGTH);
+            for (int i = 1; i < iterations; i++) {
+                digest.update(out, outOffset, Hash.HASH_LENGTH);
+                digest.digest(out, outOffset, Hash.HASH_LENGTH);
+            }
+        } catch (DigestException e) {
+            throw new RuntimeException(e);
+        } finally {
+            releaseit(digest);
+        }
+    }
+
     /**
      *  Get a MessageDigest instance from the pool,
      *  for uses where the one-shot calculateHash()
