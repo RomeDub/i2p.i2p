@@ -3,7 +3,7 @@ package net.i2p.crypto;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import net.i2p.I2PAppContext;
 import net.i2p.data.Hash;
@@ -17,13 +17,13 @@ import net.i2p.data.Hash;
  * is removed as of 0.9.28.
  */
 public final class SHA256Generator {
-    private final LinkedBlockingQueue<MessageDigest> _digests;
+    private final ArrayBlockingQueue<MessageDigest> _digests;
 
     /**
      *  @param context unused
      */
     public SHA256Generator(I2PAppContext context) {
-        _digests = new LinkedBlockingQueue<MessageDigest>(32);
+        _digests = new ArrayBlockingQueue<MessageDigest>(32);
     }
     
     public static final SHA256Generator getInstance() {
@@ -119,7 +119,7 @@ public final class SHA256Generator {
     
     /**
      *  Release a digest back to the pool - internal version
-     *  @since 0.9.66 renamed from release()
+     *  @since public since 0.9.66 renamed from release()
      */
     private void releaseit(MessageDigest digest) {
         _digests.offer(digest);
