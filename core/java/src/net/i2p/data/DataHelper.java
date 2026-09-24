@@ -825,13 +825,44 @@ public class DataHelper {
                 throw new IllegalArgumentException("fromLong got a negative? " + rv + ": offset="+ offset +" numBytes="+numBytes);
             return rv;
         }
-        long rv = 0;
-        int limit = offset + numBytes;
-        for (int i = offset; i < limit; i++) {
-            rv <<= 8;
-            rv |= src[i] & 0xFF;
-        }
-        return rv;
+        switch (numBytes) {
+            case 1:
+                return src[offset] & 0xFFL;
+            case 2:
+                return ((long) (src[offset] & 0xFF) << 8)
+                        | (src[offset + 1] & 0xFFL);
+            case 3:
+                return ((long) (src[offset] & 0xFF) << 16)
+                        | ((long) (src[offset + 1] & 0xFF) << 8)
+                        | (src[offset + 2] & 0xFFL);
+            case 4:
+                return ((long) (src[offset] & 0xFF) << 24)
+                        | ((long) (src[offset + 1] & 0xFF) << 16)
+                        | ((long) (src[offset + 2] & 0xFF) << 8)
+                        | (src[offset + 3] & 0xFFL);
+            case 5:
+                return ((long) (src[offset] & 0xFF) << 32)
+                        | ((long) (src[offset + 1] & 0xFF) << 24)
+                        | ((long) (src[offset + 2] & 0xFF) << 16)
+                        | ((long) (src[offset + 3] & 0xFF) << 8)
+                        | (src[offset + 4] & 0xFFL);
+            case 6:
+                return ((long) (src[offset] & 0xFF) << 40)
+                        | ((long) (src[offset + 1] & 0xFF) << 32)
+                        | ((long) (src[offset + 2] & 0xFF) << 24)
+                        | ((long) (src[offset + 3] & 0xFF) << 16)
+                        | ((long) (src[offset + 4] & 0xFF) << 8)
+                        | (src[offset + 5] & 0xFFL);
+            case 7:
+                return ((long) (src[offset] & 0xFF) << 48)
+                        | ((long) (src[offset + 1] & 0xFF) << 40)
+                        | ((long) (src[offset + 2] & 0xFF) << 32)
+                        | ((long) (src[offset + 3] & 0xFF) << 24)
+                        | ((long) (src[offset + 4] & 0xFF) << 16)
+                        | ((long) (src[offset + 5] & 0xFF) << 8)
+                        | (src[offset + 6] & 0xFFL);
+            default:
+                throw new AssertionError("Invalid number of bytes");
     }
     
     /**
