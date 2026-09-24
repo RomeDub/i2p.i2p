@@ -59,8 +59,6 @@ public final class ElGamalEngine {
     private final Log _log;
     private final I2PAppContext _context;
     private final YKGenerator _ykgen;
-    private volatile PublicKey _cachedPublicKey;
-    private volatile NativeBigInteger _cachedPublicKeyValue;
 
     private static final BigInteger ELGPM1 = CryptoConstants.elgp.subtract(BigInteger.ONE);
     private static final int ELG_CLEARTEXT_LENGTH = 222;
@@ -113,14 +111,6 @@ public final class ElGamalEngine {
         return _ykgen.getNextYK();
     }
 
-    private NativeBigInteger getPublicKeyValue(PublicKey publicKey) {
-        if (publicKey == _cachedPublicKey)
-            return _cachedPublicKeyValue;
-        NativeBigInteger value = new NativeBigInteger(1, publicKey.getData());
-        _cachedPublicKeyValue = value;
-        _cachedPublicKey = publicKey;
-        return value;
-    }
 
     /** encrypt the data to the public key
      * @return encrypted data, will be exactly 514 bytes long
@@ -232,7 +222,7 @@ public final class ElGamalEngine {
             NativeBigInteger y = new NativeBigInteger(1, buf);
             BigInteger ya = y.modPowCT(y1p, CryptoConstants.elgp);
             System.arraycopy(encrypted, ELG_HALF_LENGTH, buf, 0, ELG_HALF_LENGTH);
-            BigInteger d = new BigInteger(1, buf);
+            BigInteger d = new NativeBigInteger(1, buf);
             BigInteger m = ya.multiply(d);
             m = m.mod(CryptoConstants.elgp);
             byte val[] = m.toByteArray();
