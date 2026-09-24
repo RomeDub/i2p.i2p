@@ -20,7 +20,15 @@ jobs:
       - run: ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
       - name: Run crypto benchmarks
         run: |
-          java -jar core/build/libs/i2p-jmh.jar '.*(CoreFeatureBench|ElGamalBench|NativeBigIntegerBench).*' -f 1 -wi 3 -i 5 -tu ns | tee /tmp/results.txt
+          git fetch --no-tags --depth=1 origin master
+          git checkout --force master
+          ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
+          echo "=== master ==="
+          java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.encrypt' -f 1 -wi 3 -i 5 -tu ns | tee /tmp/results.txt
+          git checkout --force "$GITHUB_SHA"
+          ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
+          echo "=== candidate ==="
+          java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.encrypt' -f 1 -wi 3 -i 5 -tu ns | tee -a /tmp/results.txt
       - uses: actions/upload-artifact@v4
         with:
           name: performance-results
