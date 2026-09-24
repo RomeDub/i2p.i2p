@@ -1,0 +1,30 @@
+name: Full crypto benchmark
+
+on:
+  push:
+    branches:
+      - perf-profile-20260924
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+      - name: Build benchmark jar
+        run: ./gradlew :core:jmhJar --no-daemon
+      - name: Run all crypto benchmarks
+        run: |
+          java -jar core/build/libs/core-jmh.jar '.*Bench.*' -f 1 -wi 2 -i 3 -tu ns -rf json -rff /tmp/jmh.json | tee /tmp/jmh.txt
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmh-results
+          path: /tmp/jmh.*
