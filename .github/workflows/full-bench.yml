@@ -28,7 +28,7 @@ jobs:
           git checkout --force master
           ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
           echo "=== master ==="
-          java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.encrypt' -f 1 -wi 3 -i 5 -tu ns | tee /tmp/jmh.txt
+          java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.decrypt' -f 1 -wi 3 -i 5 -tu ns | tee /tmp/jmh.txt
           git checkout --force "$GITHUB_SHA"
           ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
           echo "=== candidate ==="
