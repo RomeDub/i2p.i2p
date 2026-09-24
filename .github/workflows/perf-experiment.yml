@@ -9,16 +9,57 @@ permissions:
   contents: read
 
 jobs:
-  jmh:
+  pbe:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Build JMH jar
-        run: ./gradlew :core:jmhJar --no-daemon
-      - name: Run PBE JMH benchmark
-        run: java -jar core/build/libs/core-jmh.jar CoreFeatureBench.pbeSessionKey -f 3 -wi 3 -i 5 -tu ns
+      - name: Compare current master with candidate
+        env:
+          CANDIDATE: ${{ github.sha }}
+        run: |
+          cat > /tmp/PbeBench.java <<'EOF'
+          package net.i2p;
+          import net.i2p.crypto.SHA256Generator;
+          public final class PbeBench {
+              public static void main(String[] args) {
+                  I2PAppContext ctx = I2PAppContext.getGlobalContext();
+                  SHA256Generator sha = ctx.sha();
+                  byte[] salt = new byte[16];
+                  byte[] passphrase = new byte[24];
+                  byte[] salted = new byte[40];
+                  System.arraycopy(salt, 0, salted, 0, 16);
+                  System.arraycopy(passphrase, 0, salted, 16, 24);
+                  byte[] out = new byte[32];
+                  for (int i = 0; i < 500; i++)
+                      sha.calculateHashChain(salted, 0, salted.length, 1000, out, 0);
+                  long start = System.nanoTime();
+                  for (int i = 0; i < 5000; i++)
+                      sha.calculateHashChain(salted, 0, salted.length, 1000, out, 0);
+                  long elapsed = System.nanoTime() - start;
+                  double nsPerCall = elapsed / 5000.0;
+                  System.out.printf("pbeSessionKey-like: %.2f ns/op%n", nsPerCall);
+              }
+          }
+          EOF
+
+          run_bench() {
+            ref="$1"
+            git checkout --force "$ref"
+            ./gradlew :core:classes --no-daemon
+            rm -rf /tmp/pbe-classes
+            mkdir -p /tmp/pbe-classes
+            javac -cp core/build/classes/java/main -d /tmp/pbe-classes /tmp/PbeBench.java
+            java -cp /tmp/pbe-classes:core/build/classes/java/main net.i2p.PbeBench
+          }
+
+          echo "=== BASELINE: master ==="
+          run_bench master
+          echo "=== CANDIDATE: $CANDIDATE ==="
+          run_bench "$CANDIDATE"
