@@ -18,5 +18,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Build JMH jar
+        run: ./gradlew :core:jmhJar --no-daemon
       - name: Run PBE JMH benchmark
-        run: ./gradlew :core:jmh --no-daemon -Pjmh.includes=CoreFeatureBench.pbeSessionKey -Pjmh.forks=3 -Pjmh.warmupIterations=3 -Pjmh.iterations=5
+        run: java -jar core/build/libs/core-jmh.jar CoreFeatureBench.pbeSessionKey -f 3 -wi 3 -i 5 -tu ns
