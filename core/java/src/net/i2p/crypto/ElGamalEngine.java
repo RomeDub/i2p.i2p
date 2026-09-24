@@ -148,14 +148,14 @@ public final class ElGamalEngine {
         if (m.compareTo(CryptoConstants.elgp) >= 0)
             throw new IllegalArgumentException("ARGH.  Data cannot be larger than the ElGamal prime.  FIXME");
         //long t2 = _context.clock().now();
-        BigInteger aalpha = new NativeBigInteger(1, publicKey.getData());
+        NativeBigInteger aalpha = new NativeBigInteger(1, publicKey.getData());
         //long t3 = _context.clock().now();
         BigInteger yk[] = getNextYK();
         BigInteger k = yk[1];
         BigInteger y = yk[0];
 
         //long t7 = _context.clock().now();
-        BigInteger d = aalpha.modPow(k, CryptoConstants.elgp);
+        BigInteger d = aalpha.modPowCT(k, CryptoConstants.elgp);
         //long t8 = _context.clock().now();
         d = d.multiply(m);
         //long t9 = _context.clock().now();
