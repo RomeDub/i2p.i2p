@@ -37,6 +37,12 @@ sourceSets {
         java {
             srcDir 'java/bench'
         }
+        resources {
+            srcDir project(':installer').file('lib/jbigi')
+            include '*.dll'
+            include '*.so'
+            include '*.jnilib'
+        }
     }
 }
 
