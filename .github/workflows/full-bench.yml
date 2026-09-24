@@ -24,16 +24,15 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin master "$GITHUB_SHA"
           java -jar core/build/libs/i2p-jmh.jar -l | tee /tmp/jmh.txt
-          cat > /tmp/run-elgamal.sh <<'EOF'
-set -e
-ref="$1"
-git checkout --force "$ref"
-./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
-echo "=== $ref ==="
-java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.encrypt' -f 1 -wi 3 -i 5 -tu ns
-EOF
-bash /tmp/run-elgamal.sh master | tee /tmp/jmh.txt
-bash /tmp/run-elgamal.sh "$GITHUB_SHA" | tee -a /tmp/jmh.txt
+          git fetch --no-tags --depth=1 origin master "$GITHUB_SHA"
+          git checkout --force master
+          ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
+          echo "=== master ==="
+          java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.encrypt' -f 1 -wi 3 -i 5 -tu ns | tee /tmp/jmh.txt
+          git checkout --force "$GITHUB_SHA"
+          ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
+          echo "=== candidate ==="
+          java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.encrypt' -f 1 -wi 3 -i 5 -tu ns | tee -a /tmp/jmh.txt
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
