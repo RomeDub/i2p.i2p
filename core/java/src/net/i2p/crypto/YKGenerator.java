@@ -16,6 +16,7 @@ import net.i2p.I2PAppContext;
 import net.i2p.util.I2PThread;
 import net.i2p.util.NativeBigInteger;
 import net.i2p.util.SystemVersion;
+import net.i2p.stat.RateStat;
 
 /**
  * Precalculate the Y and K for ElGamal encryption operations.
@@ -43,6 +44,8 @@ final class YKGenerator {
     private final ArrayBlockingQueue<BigInteger[]> _values;
     private Thread _precalcThread;
     private final I2PAppContext ctx;
+    private final RateStat _ykUsedStat;
+    private final RateStat _ykEmptyStat;
     private volatile boolean _isRunning;
 
     public final static String PROP_YK_PRECALC_MIN = "crypto.yk.precalc.min";
@@ -69,6 +72,8 @@ final class YKGenerator {
 
         CALC_DELAY = ctx.getProperty(PROP_YK_PRECALC_DELAY, DEFAULT_YK_PRECALC_DELAY);
         _values = new ArrayBlockingQueue<BigInteger[]>(MAX_NUM_BUILDERS);
+        _ykUsedStat = ctx.statManager().getRate("crypto.YKUsed");
+        _ykEmptyStat = ctx.statManager().getRate("crypto.YKEmpty");
 
         //if (_log.shouldLog(Log.DEBUG))
         //    _log.debug("ElGamal YK Precalc (minimum: " + MIN_NUM_BUILDERS + " max: " + MAX_NUM_BUILDERS + ", delay: "
@@ -121,11 +126,13 @@ final class YKGenerator {
 
     /** @return rv[0] = Y; rv[1] = K */
     public BigInteger[] getNextYK() {
-        ctx.statManager().addRateData("crypto.YKUsed", 1);
+        if (_ykUsedStat != null)
+            _ykUsedStat.addData(1);
         BigInteger[] rv = _values.poll();
         if (rv != null)
             return rv;
-        ctx.statManager().addRateData("crypto.YKEmpty", 1);
+        if (_ykEmptyStat != null)
+            _ykEmptyStat.addData(1);
         rv = generateYK();
         if (_precalcThread != null)
             _precalcThread.interrupt();
