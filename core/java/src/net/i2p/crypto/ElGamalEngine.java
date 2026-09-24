@@ -41,6 +41,7 @@ import net.i2p.util.Log;
 import net.i2p.util.NativeBigInteger;
 import net.i2p.util.SimpleByteCache;
 import net.i2p.util.SystemVersion;
+import net.i2p.stat.RateStat;
 
 /** 
  * Wrapper for ElGamal encryption/signature schemes.
@@ -59,6 +60,8 @@ public final class ElGamalEngine {
     private final Log _log;
     private final I2PAppContext _context;
     private final YKGenerator _ykgen;
+    private final RateStat _encryptStat;
+    private final RateStat _decryptStat;
 
     private static final BigInteger ELGPM1 = CryptoConstants.elgp.subtract(BigInteger.ONE);
     private static final int ELG_CLEARTEXT_LENGTH = 222;
@@ -83,6 +86,8 @@ public final class ElGamalEngine {
         _context = context;
         _log = context.logManager().getLog(ElGamalEngine.class);
         _ykgen = new YKGenerator(context);
+        _encryptStat = context.statManager().getRate("crypto.elGamal.encrypt");
+        _decryptStat = context.statManager().getRate("crypto.elGamal.decrypt");
         // Don't start the precalc thread for external applications,
         // benchmarks, or unit tests.
         // YKgen still works, it just won't precalc.
@@ -192,7 +197,8 @@ public final class ElGamalEngine {
             if (_log.shouldLog(Log.WARN)) _log.warn("Took too long to encrypt ElGamal block (" + diff + "ms)");
         }
 
-        _context.statManager().addRateData("crypto.elGamal.encrypt", diff);
+        if (_encryptStat != null)
+            _encryptStat.addData(diff);
         return out;
     }
 
@@ -222,7 +228,7 @@ public final class ElGamalEngine {
             NativeBigInteger y = new NativeBigInteger(1, buf);
             BigInteger ya = y.modPowCT(y1p, CryptoConstants.elgp);
             System.arraycopy(encrypted, ELG_HALF_LENGTH, buf, 0, ELG_HALF_LENGTH);
-            BigInteger d = new NativeBigInteger(1, buf);
+            BigInteger d = new BigInteger(1, buf);
             BigInteger m = ya.multiply(d);
             m = m.mod(CryptoConstants.elgp);
             byte val[] = m.toByteArray();
@@ -258,7 +264,8 @@ public final class ElGamalEngine {
                     _log.warn("Took too long to decrypt and verify ElGamal block (" + diff + "ms)");
             }
 
-            _context.statManager().addRateData("crypto.elGamal.decrypt", diff);
+            if (_decryptStat != null)
+                _decryptStat.addData(diff);
 
             if (ok) {
                 //_log.debug("Hash matches: " + DataHelper.toString(hash.getData(), hash.getData().length));
