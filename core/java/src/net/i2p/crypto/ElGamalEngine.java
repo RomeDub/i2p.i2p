@@ -143,7 +143,7 @@ public final class ElGamalEngine {
         System.arraycopy(data, 0, d2, 1+Hash.HASH_LENGTH, data.length);
         
         //long t0 = _context.clock().now();
-        BigInteger m = new BigInteger(1, d2);
+        BigInteger m = new NativeBigInteger(1, d2);
         //long t1 = _context.clock().now();
         if (m.compareTo(CryptoConstants.elgp) >= 0)
             throw new IllegalArgumentException("ARGH.  Data cannot be larger than the ElGamal prime.  FIXME");
