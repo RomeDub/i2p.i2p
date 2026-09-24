@@ -1,0 +1,27 @@
+name: Performance scan
+
+on:
+  push:
+    branches: [perf-real-20260924]
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+      - run: ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
+      - name: Run crypto benchmarks
+        run: |
+          java -jar core/build/libs/i2p-jmh.jar '.*(CoreFeatureBench|ElGamalBench|NativeBigIntegerBench).*' -f 1 -wi 3 -i 5 -tu ns | tee /tmp/results.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: /tmp/results.txt
