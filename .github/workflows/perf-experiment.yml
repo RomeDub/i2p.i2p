@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 21
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
       - name: Run PBE JMH benchmark
         run: ./gradlew :core:jmh --no-daemon -Pjmh.includes=CoreFeatureBench.pbeSessionKey -Pjmh.forks=3 -Pjmh.warmupIterations=3 -Pjmh.iterations=5
