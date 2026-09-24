@@ -22,7 +22,8 @@ jobs:
         run: ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
       - name: Run all crypto benchmarks
         run: |
-          java -jar core/build/libs/core-jmh.jar '.*Bench.*' -f 1 -wi 2 -i 3 -tu ns -rf json -rff /tmp/jmh.json | tee /tmp/jmh.txt
+          java -jar core/build/libs/core-jmh.jar -l | tee /tmp/jmh.txt
+          java -jar core/build/libs/core-jmh.jar 'net.i2p.crypto.ElGamalBench.*|net.i2p.crypto.SHA256Bench.*|net.i2p.util.NativeBigIntegerBench.*|net.i2p.CoreFeatureBench.*' -f 1 -wi 2 -i 3 -tu ns | tee -a /tmp/jmh.txt
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
