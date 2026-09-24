@@ -22,6 +22,7 @@ jobs:
         run: ./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
       - name: Run all crypto benchmarks
         run: |
+          git fetch --no-tags --depth=1 origin master "$GITHUB_SHA"
           java -jar core/build/libs/i2p-jmh.jar -l | tee /tmp/jmh.txt
           cat > /tmp/run-elgamal.sh <<'EOF'
 set -e
