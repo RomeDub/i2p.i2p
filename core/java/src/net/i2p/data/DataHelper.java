@@ -812,14 +812,25 @@ public class DataHelper {
         if ( (src == null) || (src.length == 0) )
             return 0;
         
+        if (numBytes == 8) {
+            long rv = ((long) (src[offset] & 0xFF) << 56)
+                    | ((long) (src[offset + 1] & 0xFF) << 48)
+                    | ((long) (src[offset + 2] & 0xFF) << 40)
+                    | ((long) (src[offset + 3] & 0xFF) << 32)
+                    | ((long) (src[offset + 4] & 0xFF) << 24)
+                    | ((long) (src[offset + 5] & 0xFF) << 16)
+                    | ((long) (src[offset + 6] & 0xFF) << 8)
+                    | (src[offset + 7] & 0xFF);
+            if (rv < 0)
+                throw new IllegalArgumentException("fromLong got a negative? " + rv + ": offset="+ offset +" numBytes="+numBytes);
+            return rv;
+        }
         long rv = 0;
         int limit = offset + numBytes;
         for (int i = offset; i < limit; i++) {
             rv <<= 8;
             rv |= src[i] & 0xFF;
         }
-        if (rv < 0)
-            throw new IllegalArgumentException("fromLong got a negative? " + rv + ": offset="+ offset +" numBytes="+numBytes);
         return rv;
     }
     
