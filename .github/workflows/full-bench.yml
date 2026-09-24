@@ -23,7 +23,16 @@ jobs:
       - name: Run all crypto benchmarks
         run: |
           java -jar core/build/libs/i2p-jmh.jar -l | tee /tmp/jmh.txt
-          java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.*' -f 1 -wi 2 -i 3 -tu ns | tee -a /tmp/jmh.txt
+          cat > /tmp/run-elgamal.sh <<'EOF'
+set -e
+ref="$1"
+git checkout --force "$ref"
+./gradlew :core:jmhJar --no-daemon -x compileTestScala -x compileTestJava
+echo "=== $ref ==="
+java -jar core/build/libs/i2p-jmh.jar 'net.i2p.crypto.ElGamalBench.encrypt' -f 1 -wi 3 -i 5 -tu ns
+EOF
+bash /tmp/run-elgamal.sh master | tee /tmp/jmh.txt
+bash /tmp/run-elgamal.sh "$GITHUB_SHA" | tee -a /tmp/jmh.txt
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
