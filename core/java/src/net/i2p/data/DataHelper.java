@@ -863,6 +863,7 @@ public class DataHelper {
                         | (src[offset + 6] & 0xFFL);
             default:
                 throw new AssertionError("Invalid number of bytes");
+        }
     }
     
     /**
@@ -894,13 +895,14 @@ public class DataHelper {
      * @since 0.9.47 moved from NTCP2Payload
      */
     public static long fromLong8(byte src[], int offset) {
-        long rv = 0;
-        int limit = offset + 8;
-        for (int i = offset; i < limit; i++) {
-            rv <<= 8;
-            rv |= src[i] & 0xFF;
-        }
-        return rv;
+        return ((long) (src[offset] & 0xFF) << 56)
+                | ((long) (src[offset + 1] & 0xFF) << 48)
+                | ((long) (src[offset + 2] & 0xFF) << 40)
+                | ((long) (src[offset + 3] & 0xFF) << 32)
+                | ((long) (src[offset + 4] & 0xFF) << 24)
+                | ((long) (src[offset + 5] & 0xFF) << 16)
+                | ((long) (src[offset + 6] & 0xFF) << 8)
+                | (src[offset + 7] & 0xFFL);
     }
     
     /**
